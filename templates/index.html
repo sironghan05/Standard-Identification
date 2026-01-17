@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>灰锥识别系统 - Web版</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- 配置Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        secondary: '#36CFC9',
+                        success: '#52C41A',
+                        warning: '#FAAD14',
+                        danger: '#FF4D4F',
+                        info: '#1890FF',
+                        neutral: '#8C8C8C',
+                        light: '#F5F5F5',
+                        dark: '#1F1F1F'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'card': '0 4px 12px rgba(0, 0, 0, 0.08)',
+                        'hover': '0 8px 24px rgba(0, 0, 0, 0.12)'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .text-shadow { text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+            .transition-custom { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+            .bg-gradient-primary { background: linear-gradient(135deg, #165DFF 0%, #36CFC9 100%); }
+            .scale-hover { transition: transform 0.2s ease-in-out; }
+            .scale-hover:hover { transform: scale(1.02); }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-sm fixed top-0 w-full z-50 transition-all duration-300" id="navbar">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa fa-object-group text-primary text-2xl"></i>
+                <h1 class="text-xl md:text-2xl font-bold text-primary">灰锥识别系统</h1>
+            </div>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="#" class="text-gray-600 hover:text-primary transition-colors">首页</a>
+                <a href="#about" class="text-gray-600 hover:text-primary transition-colors">关于系统</a>
+                <a href="#guide" class="text-gray-600 hover:text-primary transition-colors">使用指南</a>
+            </nav>
+            <button class="md:hidden text-gray-600 focus:outline-none" id="mobileMenuButton">
+                <i class="fa fa-bars text-xl"></i>
+            </button>
+        </div>
+        <!-- 移动端菜单 -->
+        <div class="md:hidden hidden bg-white border-t" id="mobileMenu">
+            <div class="container mx-auto px-4 py-3 flex flex-col space-y-3">
+                <a href="#" class="text-gray-600 hover:text-primary py-2 transition-colors">首页</a>
+                <a href="#about" class="text-gray-600 hover:text-primary py-2 transition-colors">关于系统</a>
+                <a href="#guide" class="text-gray-600 hover:text-primary py-2 transition-colors">使用指南</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-grow container mx-auto px-4 pt-24 pb-16">
+        <!-- 欢迎横幅 -->
+        <section class="bg-gradient-primary text-white rounded-2xl p-8 mb-8 shadow-card">
+            <div class="max-w-3xl">
+                <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold mb-4 text-shadow">高精度灰锥自动识别系统</h2>
+                <p class="text-lg mb-6 opacity-90">基于计算机视觉技术的灰锥检测工具，支持自动识别与手动修正，满足工业标准检测需求。</p>
+                <div class="flex flex-wrap gap-4">
+                    <div class="flex items-center space-x-2 bg-white/20 px-4 py-2 rounded-full">
+                        <i class="fa fa-check-circle"></i>
+                        <span>自动检测</span>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-white/20 px-4 py-2 rounded-full">
+                        <i class="fa fa-hand-pointer-o"></i>
+                        <span>手动修正</span>
+                    </div>
+                    <div class="flex items-center space-x-2 bg-white/20 px-4 py-2 rounded-full">
+                        <i class="fa fa-bar-chart"></i>
+                        <span>数据可视化</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 主要功能区 -->
+        <section class="mb-12">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- 左侧上传区域 -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- 上传卡片 -->
+                    <div class="bg-white rounded-xl shadow-card p-6 transition-custom scale-hover">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                            <i class="fa fa-cloud-upload text-primary mr-2"></i>
+                            上传灰锥图像
+                        </h3>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center transition-colors hover:border-primary" id="dropZone">
+                            <input type="file" id="fileInput" accept="image/*" class="hidden">
+                            <label for="fileInput" class="cursor-pointer">
+                                <i class="fa fa-picture-o text-4xl text-gray-400 mb-3"></i>
+                                <p class="text-gray-600 mb-2">点击选择图像或拖放图像到此处</p>
+                                <p class="text-sm text-gray-500">支持 JPG, PNG, BMP 等格式</p>
+                            </label>
+                        </div>
+                        <div class="mt-4 hidden" id="fileInfo">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div class="flex items-center">
+                                    <i class="fa fa-file-image-o text-primary mr-2"></i>
+                                    <span class="text-sm truncate max-w-[200px]" id="fileName"></span>
+                                </div>
+                                <button class="text-gray-500 hover:text-danger" id="removeFile">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button class="w-full bg-primary text-white py-3 rounded-lg mt-6 font-medium transition-colors hover:bg-primary/90 disabled:bg-gray-400 disabled:cursor-not-allowed" id="detectButton" disabled>
+                            <i class="fa fa-search mr-2"></i>
+                            开始检测
+                        </button>
+                    </div>
+
+                    <!-- 手动选点控制区 -->
+                    <div class="bg-white rounded-xl shadow-card p-6 transition-custom scale-hover">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800 flex items-center">
+                            <i class="fa fa-hand-pointer-o text-primary mr-2"></i>
+                            手动选点修正
+                        </h3>
+                        <div class="space-y-4">
+                            <p class="text-gray-600 text-sm">如自动检测结果不准确，可通过手动选点进行修正。请按顺序点击灰锥的三个顶点（建议：顶部、左下、右下）。</p>
+                            <div class="flex gap-3">
+                                <button class="flex-1 bg-secondary text-white py-2 rounded-lg font-medium transition-colors hover:bg-secondary/90 disabled:bg-gray-400 disabled:cursor-not-allowed" id="manualDetectButton" disabled>
+                                    <i class="fa fa-pencil mr-2"></i>
+                                    开始手动选点
+                                </button>
+                                <button class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium transition-colors hover:bg-gray-300 disabled:bg-gray-400 disabled:cursor-not-allowed" id="resetPointsButton" disabled>
+                                    <i class="fa fa-refresh mr-2"></i>
+                                    重置
+                                </button>
+                            </div>
+                            <div class="hidden" id="pointsInfo">
+                                <div class="text-sm text-gray-600 mb-2">已选点：<span id="pointCount">0</span>/3</div>
+                                <div class="bg-gray-50 p-3 rounded-lg text-sm text-gray-700">
+                                    <div id="pointList"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧结果区域 -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- 检测结果卡片 -->
+                    <div class="bg-white rounded-xl shadow-card overflow-hidden transition-custom scale-hover">
+                        <div class="p-6 border-b border-gray-100">
+                            <h3 class="text-xl font-semibold text-gray-800 flex items-center">
+                                <i class="fa fa-bar-chart text-primary mr-2"></i>
+                                检测结果
+                            </h3>
+                        </div>
+                        <div class="p-6">
+                            <!-- 结果概览 -->
+                            <div class="flex items-center justify-between mb-6" id="resultOverview">
+                                <div class="flex items-center">
+                                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mr-4">
+                                        <i class="fa fa-question-circle text-2xl text-gray-400"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-lg font-medium text-gray-800">等待检测</h4>
+                                        <p class="text-gray-500 text-sm">请上传图像并点击开始检测按钮</p>
+                                    </div>
+                                </div>
+                                <div class="py-2 px-4 rounded-full bg-gray-100 text-gray-600 hidden" id="detectionType">
+                                    自动检测
+                                </div>
+                            </div>
+
+                            <!-- 详细数据 -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6" id="resultDetails">
+                                <!-- 高度 -->
+                                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                                    <div class="text-sm text-gray-500 mb-1">高度</div>
+                                    <div class="text-2xl font-bold text-gray-800" id="resultHeight">--</div>
+                                    <div class="text-xs text-gray-400">像素</div>
+                                </div>
+                                <!-- 底边 -->
+                                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                                    <div class="text-sm text-gray-500 mb-1">底边</div>
+                                    <div class="text-2xl font-bold text-gray-800" id="resultBase">--</div>
+                                    <div class="text-xs text-gray-400">像素</div>
+                                </div>
+                                <!-- 比例 -->
+                                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                                    <div class="text-sm text-gray-500 mb-1">高度/底边比例</div>
+                                    <div class="text-2xl font-bold text-gray-800" id="resultRatio">--</div>
+                                    <div class="text-xs text-gray-400">标准范围: 2.5-3.3</div>
+                                </div>
+                            </div>
+
+                            <!-- 判定结果 -->
+                            <div class="p-4 rounded-lg mb-6 hidden" id="judgmentResult">
+                                <div class="flex items-center mb-2">
+                                    <i class="fa fa-check-circle text-success text-xl mr-2"></i>
+                                    <h4 class="text-lg font-medium text-success">符合要求</h4>
+                                </div>
+                                <p class="text-gray-700" id="judgmentMessage">灰锥比例符合要求，判定为标准灰锥。</p>
+                            </div>
+
+                            <!-- 图表区域 -->
+                            <div class="mb-6 hidden" id="chartContainer">
+                                <div class="text-sm font-medium text-gray-700 mb-3">比例分析</div>
+                                <div class="h-[200px]">
+                                    <canvas id="ratioChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- 操作提示 -->
+                            <div class="text-sm text-gray-500 border-t border-gray-100 pt-4" id="actionTips">
+                                <p>提示：上传图像后点击「开始检测」按钮，系统将自动识别灰锥并计算参数。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 图像预览区域 -->
+                    <div class="bg-white rounded-xl shadow-card overflow-hidden transition-custom scale-hover">
+                        <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                            <h3 class="text-xl font-semibold text-gray-800 flex items-center">
+                                <i class="fa fa-images text-primary mr-2"></i>
+                                图像处理结果
+                            </h3>
+                            <div class="flex space-x-2 text-sm" id="imageTabs">
+                                <button class="px-3 py-1 rounded-md bg-primary text-white" data-tab="result">检测结果</button>
+                                <button class="px-3 py-1 rounded-md text-gray-600 hover:bg-gray-100" data-tab="original">原始图像</button>
+                                <button class="px-3 py-1 rounded-md text-gray-600 hover:bg-gray-100" data-tab="binary">二值化图像</button>
+                            </div>
+                        </div>
+                        <div class="p-4 bg-gray-50 flex justify-center">
+                            <!-- 图像容器 -->
+                            <div class="relative" id="imageContainer">
+                                <!-- 预览图像 -->
+                                <div class="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm" style="max-width: 100%;">
+                                    <div class="aspect-[4/3] bg-gray-100 flex items-center justify-center">
+                                        <i class="fa fa-picture-o text-4xl text-gray-300"></i>
+                                    </div>
+                                </div>
+                                
+                                <!-- 手动选点画布叠加层 -->
+                                <canvas id="pointCanvas" class="absolute top-0 left-0 hidden"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 关于系统 -->
+        <section id="about" class="mb-12">
+            <div class="bg-white rounded-xl shadow-card p-8 transition-custom scale-hover">
+                <h3 class="text-2xl font-bold text-gray-800 mb-6">关于系统</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="space-y-4">
+                        <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                            <i class="fa fa-cogs text-2xl text-primary"></i>
+                        </div>
+                        <h4 class="text-xl font-semibold text-gray-800">技术原理</h4>
+                        <p class="text-gray-600">基于计算机视觉技术，通过图像预处理、轮廓提取和三角形拟合算法，自动识别灰锥形状并计算关键参数。</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mb-4">
+                            <i class="fa fa-check-circle text-2xl text-success"></i>
+                        </div>
+                        <h4 class="text-xl font-semibold text-gray-800">核心功能</h4>
+                        <p class="text-gray-600">支持自动灰锥识别、手动顶点选择修正、实时结果可视化，快速判断灰锥是否符合工业标准要求。</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="w-16 h-16 rounded-full bg-info/10 flex items-center justify-center mb-4">
+                            <i class="fa fa-balance-scale text-2xl text-info"></i>
+                        </div>
+                        <h4 class="text-xl font-semibold text-gray-800">标准依据</h4>
+                        <p class="text-gray-600">遵循工业灰锥检测标准，通过验证高度与底边比例（2.5-3.3）及等腰三角形特性，确保检测结果的准确性。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 使用指南 -->
+        <section id="guide" class="mb-12">
+            <div class="bg-white rounded-xl shadow-card p-8 transition-custom scale-hover">
+                <h3 class="text-2xl font-bold text-gray-800 mb-6">使用指南</h3>
+                <div class="space-y-8">
+                    <!-- 自动检测流程 -->
+                    <div>
+                        <h4 class="text-xl font-semibold text-gray-800 mb-4">自动检测流程</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="border border-gray-100 rounded-lg p-5 relative">
+                                <div class="absolute -top-4 -left-4 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold">1</div>
+                                <h5 class="font-medium text-gray-800 mb-2 mt-1">上传图像</h5>
+                                <p class="text-gray-600 text-sm">点击上传区域或拖放图像文件，支持常见图像格式。</p>
+                            </div>
+                            <div class="border border-gray-100 rounded-lg p-5 relative">
+                                <div class="absolute -top-4 -left-4 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold">2</div>
+                                <h5 class="font-medium text-gray-800 mb-2 mt-1">开始检测</h5>
+                                <p class="text-gray-600 text-sm">点击「开始检测」按钮，系统自动分析图像并识别灰锥。</p>
+                            </div>
+                            <div class="border border-gray-100 rounded-lg p-5 relative">
+                                <div class="absolute -top-4 -left-4 w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold">3</div>
+                                <h5 class="font-medium text-gray-800 mb-2 mt-1">查看结果</h5>
+                                <p class="text-gray-600 text-sm">系统显示检测结果，包括高度、底边长度、比例及判定结论。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 手动修正流程 -->
+                    <div>
+                        <h4 class="text-xl font-semibold text-gray-800 mb-4">手动修正流程</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div class="border border-gray-100 rounded-lg p-5 relative">
+                                <div class="absolute -top-4 -left-4 w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center font-bold">1</div>
+                                <h5 class="font-medium text-gray-800 mb-2 mt-1">启动手动选点</h5>
+                                <p class="text-gray-600 text-sm">点击「开始手动选点」按钮，进入选点模式。</p>
+                            </div>
+                            <div class="border border-gray-100 rounded-lg p-5 relative">
+                                <div class="absolute -top-4 -left-4 w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center font-bold">2</div>
+                                <h5 class="font-medium text-gray-800 mb-2 mt-1">选择顶点</h5>
+                                <p class="text-gray-600 text-sm">按顺序点击灰锥的三个顶点（建议：顶部、左下、右下）。</p>
+                            </div>
+                            <div class="border border-gray-100 rounded-lg p-5 relative">
+                                <div class="absolute -top-4 -left-4 w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center font-bold">3</div>
+                                <h5 class="font-medium text-gray-800 mb-2 mt-1">确认选择</h5>
+                                <p class="text-gray-600 text-sm">选择完三个点后，系统自动进行计算分析。</p>
+                            </div>
+                            <div class="border border-gray-100 rounded-lg p-5 relative">
+                                <div class="absolute -top-4 -left-4 w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center font-bold">4</div>
+                                <h5 class="font-medium text-gray-800 mb-2 mt-1">查看修正结果</h5>
+                                <p class="text-gray-600 text-sm">系统显示基于手动选点的检测结果和判定结论。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 拍摄建议 -->
+                    <div>
+                        <h4 class="text-xl font-semibold text-gray-800 mb-4">拍摄建议</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="flex items-start space-x-3">
+                                <i class="fa fa-lightbulb-o text-warning mt-1"></i>
+                                <p class="text-gray-600 text-sm">在光线均匀的环境下拍摄，避免强光和阴影</p>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <i class="fa fa-lightbulb-o text-warning mt-1"></i>
+                                <p class="text-gray-600 text-sm">确保灰锥占据图像中心位置，且图像清晰</p>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <i class="fa fa-lightbulb-o text-warning mt-1"></i>
+                                <p class="text-gray-600 text-sm">保持背景简洁，避免与灰锥颜色相近的物体</p>
+                            </div>
+                            <div class="flex items-start space-x-3">
+                                <i class="fa fa-lightbulb-o text-warning mt-1"></i>
+                                <p class="text-gray-600 text-sm">确保灰锥完全展开，无遮挡或部分重叠</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <div class="flex items-center space-x-3 mb-4">
+                        <i class="fa fa-object-group text-primary text-2xl"></i>
+                        <h3 class="text-xl font-bold text-white">灰锥识别系统</h3>
+                    </div>
+                    <p class="text-gray-400 text-sm">基于计算机视觉技术的高精度灰锥检测工具，为工业标准检测提供可靠支持。</p>
+                </div>
+                <div>
+                    <h4 class="text-lg font-medium text-white mb-4">功能导航</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">首页</a></li>
+                        <li><a href="#about" class="hover:text-white transition-colors">关于系统</a></li>
+                        <li><a href="#guide" class="hover:text-white transition-colors">使用指南</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-lg font-medium text-white mb-4">技术支持</h4>
+                    <ul class="space-y-2 text-gray-400">
+                        <li class="flex items-center space-x-2">
+                            <i class="fa fa-envelope-o"></i>
+                            <span>sironghan03@outlook.com</span>
+                        </li>
+                        <li class="flex items-center space-x-2">
+                            <i class="fa fa-phone"></i>
+                            <span>18858111310</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-500 text-sm">
+                <p>© 2023 灰锥识别系统 - Web版. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 进度提示模态框 -->
+    <div id="loadingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <h3 class="text-lg font-medium text-gray-800 mb-2">正在处理</h3>
+                <p class="text-gray-600 text-sm" id="loadingMessage">系统正在分析图像，请稍候...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // 全局变量
+        let selectedImage = null;
+        let currentImage = null;
+        let selectedPoints = [];
+        let isManualMode = false;
+        let pointCanvas = null;
+        let pointCtx = null;
+        let autoDetectResult = null;
+        let ratioChart = null;
+
+        // DOM 元素
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const removeFile = document.getElementById('removeFile');
+        const detectButton = document.getElementById('detectButton');
+        const manualDetectButton = document.getElementById('manualDetectButton');
+        const resetPointsButton = document.getElementById('resetPointsButton');
+        const pointsInfo = document.getElementById('pointsInfo');
+        const pointCount = document.getElementById('pointCount');
+        const pointList = document.getElementById('pointList');
+        const resultOverview = document.getElementById('resultOverview');
+        const detectionType = document.getElementById('detectionType');
+        const resultHeight = document.getElementById('resultHeight');
+        const resultBase = document.getElementById('resultBase');
+        const resultRatio = document.getElementById('resultRatio');
+        const judgmentResult = document.getElementById('judgmentResult');
+        const judgmentMessage = document.getElementById('judgmentMessage');
+        const chartContainer = document.getElementById('chartContainer');
+        const actionTips = document.getElementById('actionTips');
+        const imageTabs = document.getElementById('imageTabs');
+        const imageContainer = document.getElementById('imageContainer');
+        const loadingModal = document.getElementById('loadingModal');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const navbar = document.getElementById('navbar');
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const mobileMenu = document.getElementById('mobileMenu');
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化画布
+            pointCanvas = document.getElementById('pointCanvas');
+            pointCtx = pointCanvas.getContext('2d');
+            
+            // 初始化图表
+            initChart();
+            
+            // 事件监听
+            setupEventListeners();
+        });
+
+        // 设置事件监听
+        function setupEventListeners() {
+            // 文件上传事件
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            // 拖放事件
+            dropZone.addEventListener('dragover', handleDragOver);
+            dropZone.addEventListener('drop', handleDrop);
+            
+            // 移除文件
+            removeFile.addEventListener('click', removeSelectedFile);
+            
+            // 检测按钮
+            detectButton.addEventListener('click', performDetection);
+            
+            // 手动选点按钮
+            manualDetectButton.addEventListener('click', startManualDetection);
+            resetPointsButton.addEventListener('click', resetManualPoints);
+            
+            // 图像选项卡
+            imageTabs.querySelectorAll('button').forEach(tab => {
+                tab.addEventListener('click', () => switchImageTab(tab));
+            });
+            
+            // 图像容器点击事件（用于手动选点）
+            imageContainer.addEventListener('click', handleImageClick);
+            
+            // 导航栏滚动效果
+            window.addEventListener('scroll', handleScroll);
+            
+            // 移动端菜单
+            mobileMenuButton.addEventListener('click', toggleMobileMenu);
+            
+            // 平滑滚动
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#') return;
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 80,
+                            behavior: 'smooth'
+                        });
+                        // 关闭移动端菜单
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+        }
+
+        // 处理文件选择
+        function handleFileSelect(e) {
+            if (e.target.files && e.target.files[0]) {
+                processFile(e.target.files[0]);
+            }
+        }
+
+        // 处理拖放
+        function handleDragOver(e) {
+            e.preventDefault();
+            dropZone.classList.add('border-primary');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            dropZone.classList.remove('border-primary');
+            
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                processFile(e.dataTransfer.files[0]);
+            }
+        }
+
+        // 处理文件
+        function processFile(file) {
+            // 检查文件类型
+            const validTypes = ['image/jpeg', 'image/png', 'image/bmp', 'image/gif', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                alert('请上传有效的图像文件（JPG、PNG、BMP等）');
+                return;
+            }
+            
+            selectedImage = file;
+            fileName.textContent = file.name;
+            fileInfo.classList.remove('hidden');
+            detectButton.disabled = false;
+            manualDetectButton.disabled = true;
+            
+            // 重置之前的结果
+            resetDetectionResults();
+            
+            // 显示图像预览
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentImage = e.target.result;
+                displayImage(currentImage, 'original');
+                
+                // 更新选项卡
+                updateImageTabs('original');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 移除选中的文件
+        function removeSelectedFile() {
+            selectedImage = null;
+            currentImage = null;
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            detectButton.disabled = true;
+            manualDetectButton.disabled = true;
+            
+            // 重置结果
+            resetDetectionResults();
+            
+            // 清空图像预览
+            const imageContainer = document.querySelector('#imageContainer > div');
+            if (imageContainer) {
+                imageContainer.innerHTML = `
+                    <div class="aspect-[4/3] bg-gray-100 flex items-center justify-center">
+                        <i class="fa fa-picture-o text-4xl text-gray-300"></i>
+                    </div>
+                `;
+            }
+            
+            // 隐藏手动选点相关UI
+            resetManualPoints();
+        }
+
+        // 执行自动检测
+        function performDetection() {
+            if (!selectedImage) return;
+            
+            showLoading('正在进行自动检测，请稍候...');
+            
+            const formData = new FormData();
+            formData.append('file', selectedImage);
+            
+            fetch('/detect', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                
+                if (data.error) {
+                    alert(`检测失败: ${data.error}`);
+                    return;
+                }
+                
+                // 保存自动检测结果
+                autoDetectResult = data;
+                
+                // 更新UI显示
+                updateResultDisplay(data.auto_detect);
+                
+                // 显示结果图像
+                displayImage(data.images.result, 'result');
+                
+                // 更新选项卡
+                updateImageTabs('result');
+                
+                // 启用手动修正按钮
+                manualDetectButton.disabled = false;
+                
+                // 更新操作提示
+                actionTips.innerHTML = `
+                    <p>自动检测完成。<a href="#" class="text-primary hover:underline" onclick="startManualDetection(); return false;">点击此处</a>进行手动修正。</p>
+                `;
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('检测错误:', error);
+                alert('检测过程中发生错误，请重试');
+            });
+        }
+
+        // 开始手动检测
+        function startManualDetection() {
+            if (!autoDetectResult) return;
+            
+            // 进入手动模式
+            isManualMode = true;
+            selectedPoints = [];
+            
+            // 更新UI
+            pointsInfo.classList.remove('hidden');
+            updatePointsInfo();
+            resetPointsButton.disabled = false;
+            
+            // 显示原始图像用于选点
+            displayImage(autoDetectResult.images.original, 'manual');
+            
+            // 更新提示
+            actionTips.innerHTML = `
+                <p class="text-blue-600">手动选点模式：请按顺序点击灰锥的三个顶点（建议：顶部、左下、右下）</p>
+            `;
+        }
+
+        // 重置手动选点
+        function resetManualPoints() {
+            isManualMode = false;
+            selectedPoints = [];
+            pointsInfo.classList.add('hidden');
+            resetPointsButton.disabled = true;
+            
+            // 隐藏画布
+            pointCanvas.classList.add('hidden');
+            
+            // 更新提示
+            if (autoDetectResult) {
+                actionTips.innerHTML = `
+                    <p>自动检测完成。<a href="#" class="text-primary hover:underline" onclick="startManualDetection(); return false;">点击此处</a>进行手动修正。</p>
+                `;
+            } else {
+                actionTips.innerHTML = `
+                    <p>提示：上传图像后点击「开始检测」按钮，系统将自动识别灰锥并计算参数。</p>
+                `;
+            }
+        }
+
+        // 处理图像点击事件（手动选点）
+        function handleImageClick(e) {
+            if (!isManualMode || selectedPoints.length >= 3) return;
+            
+            // 获取点击位置相对于图像的坐标
+            const imgElement = document.querySelector('#imageContainer img');
+            if (!imgElement) return;
+            
+            const rect = imgElement.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // 计算实际图像尺寸与显示尺寸的比例
+            const img = new Image();
+            img.src = currentImage;
+            const scaleX = img.width / rect.width;
+            const scaleY = img.height / rect.height;
+            
+            // 转换为实际图像坐标
+            const realX = Math.round(x * scaleX);
+            const realY = Math.round(y * scaleY);
+            
+            // 添加点
+            selectedPoints.push([realX, realY]);
+            
+            // 更新UI
+            updatePointsInfo();
+            drawPointsOnCanvas();
+            
+            // 如果已选择3个点，执行手动检测
+            if (selectedPoints.length === 3) {
+                performManualDetection();
+            }
+        }
+
+        // 更新选点信息
+        function updatePointsInfo() {
+            pointCount.textContent = selectedPoints.length;
+            
+            // 更新点列表
+            pointList.innerHTML = '';
+            selectedPoints.forEach((point, index) => {
+                const pointEl = document.createElement('div');
+                pointEl.className = 'py-1';
+                pointEl.textContent = `点 ${index + 1}: (${point[0]}, ${point[1]})`;
+                pointList.appendChild(pointEl);
+            });
+        }
+
+        // 在画布上绘制点
+        function drawPointsOnCanvas() {
+            const imgElement = document.querySelector('#imageContainer img');
+            if (!imgElement || !pointCanvas) return;
+            
+            // 设置画布尺寸与图像一致
+            pointCanvas.width = imgElement.offsetWidth;
+            pointCanvas.height = imgElement.offsetHeight;
+            pointCanvas.style.display = 'block';
+            
+            // 计算比例
+            const img = new Image();
+            img.src = currentImage;
+            const scaleX = pointCanvas.width / img.width;
+            const scaleY = pointCanvas.height / img.height;
+            
+            // 清空画布
+            pointCtx.clearRect(0, 0, pointCanvas.width, pointCanvas.height);
+            
+            // 绘制点和连线
+            if (selectedPoints.length > 0) {
+                // 绘制连线
+                pointCtx.beginPath();
+                pointCtx.strokeStyle = '#2563eb';
+                pointCtx.lineWidth = 2;
+                
+                selectedPoints.forEach((point, index) => {
+                    const drawX = point[0] * scaleX;
+                    const drawY = point[1] * scaleY;
+                    
+                    if (index === 0) {
+                        pointCtx.moveTo(drawX, drawY);
+                    } else {
+                        pointCtx.lineTo(drawX, drawY);
+                    }
+                });
+                
+                // 如果已选3个点，闭合三角形
+                if (selectedPoints.length === 3) {
+                    const firstPoint = selectedPoints[0];
+                    pointCtx.lineTo(firstPoint[0] * scaleX, firstPoint[1] * scaleY);
+                }
+                
+                pointCtx.stroke();
+                
+                // 绘制点
+                selectedPoints.forEach((point, index) => {
+                    const drawX = point[0] * scaleX;
+                    const drawY = point[1] * scaleY;
+                    
+                    // 绘制点
+                    pointCtx.beginPath();
+                    pointCtx.arc(drawX, drawY, 6, 0, 2 * Math.PI);
+                    pointCtx.fillStyle = '#10b981';
+                    pointCtx.fill();
+                    pointCtx.strokeStyle = '#ffffff';
+                    pointCtx.lineWidth = 2;
+                    pointCtx.stroke();
+                    
+                    // 绘制点序号
+                    pointCtx.fillStyle = '#ffffff';
+                    pointCtx.font = '12px Arial';
+                    pointCtx.textAlign = 'center';
+                    pointCtx.textBaseline = 'middle';
+                    pointCtx.fillText(index + 1, drawX, drawY);
+                });
+            }
+        }
+
+        // 执行手动检测
+        function performManualDetection() {
+            showLoading('正在根据手动选点计算结果...');
+            
+            const data = {
+                image_data: autoDetectResult.images.original,
+                points: selectedPoints
+            };
+            
+            fetch('/manual-detect', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                hideLoading();
+                
+                if (result.error) {
+                    alert(`手动检测失败: ${result.error}`);
+                    return;
+                }
+                
+                // 更新UI显示
+                updateResultDisplay(result, true);
+                
+                // 显示结果图像
+                displayImage(result.image, 'result');
+                
+                // 退出手动模式
+                isManualMode = false;
+                
+                // 更新提示
+                actionTips.innerHTML = `
+                    <p>手动检测完成。<a href="#" class="text-primary hover:underline" onclick="startManualDetection(); return false;">点击此处</a>重新手动选点。</p>
+                `;
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('手动检测错误:', error);
+                alert('手动检测过程中发生错误，请重试');
+            });
+        }
+
+        // 显示图像
+        function displayImage(imageSrc, type) {
+            const imageContainer = document.querySelector('#imageContainer > div');
+            if (!imageContainer) return;
+            
+            // 创建图像元素
+            const img = document.createElement('img');
+            img.src = imageSrc;
+            img.className = 'max-w-full h-auto';
+            img.alt = type === 'original' ? '原始图像' : type === 'binary' ? '二值化图像' : '检测结果';
+            
+            // 清空容器并添加图像
+            imageContainer.innerHTML = '';
+            imageContainer.appendChild(img);
+            
+            // 图像加载完成后调整画布
+            img.onload = function() {
+                if (isManualMode && type === 'manual') {
+                    drawPointsOnCanvas();
+                } else {
+                    // 隐藏画布
+                    pointCanvas.classList.add('hidden');
+                }
+            };
+        }
+
+        // 切换图像选项卡
+        function switchImageTab(tab) {
+            // 更新选项卡样式
+            imageTabs.querySelectorAll('button').forEach(t => {
+                t.classList.remove('bg-primary', 'text-white');
+                t.classList.add('text-gray-600', 'hover:bg-gray-100');
+            });
+            tab.classList.remove('text-gray-600', 'hover:bg-gray-100');
+            tab.classList.add('bg-primary', 'text-white');
+            
+            // 根据选项卡显示对应图像
+            const tabType = tab.getAttribute('data-tab');
+            
+            if (autoDetectResult) {
+                if (tabType === 'original') {
+                    displayImage(autoDetectResult.images.original, 'original');
+                } else if (tabType === 'binary') {
+                    displayImage(autoDetectResult.images.binary, 'binary');
+                } else if (tabType === 'result') {
+                    displayImage(autoDetectResult.images.result, 'result');
+                }
+            }
+        }
+
+        // 更新选项卡
+        function updateImageTabs(activeTab) {
+            imageTabs.querySelectorAll('button').forEach(tab => {
+                const tabType = tab.getAttribute('data-tab');
+                if (tabType === activeTab) {
+                    tab.classList.remove('text-gray-600', 'hover:bg-gray-100');
+                    tab.classList.add('bg-primary', 'text-white');
+                } else {
+                    tab.classList.remove('bg-primary', 'text-white');
+                    tab.classList.add('text-gray-600', 'hover:bg-gray-100');
+                }
+            });
+        }
+
+        // 更新结果显示
+        function updateResultDisplay(result, isManual = false) {
+            // 更新概览
+            resultOverview.innerHTML = `
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-full ${result.success ? 'bg-success/10' : 'bg-danger/10'} flex items-center justify-center mr-4">
+                        <i class="fa ${result.success ? 'fa-check-circle' : 'fa-times-circle'} text-2xl ${result.success ? 'text-success' : 'text-danger'}"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-medium text-gray-800">${result.success ? '检测通过' : '检测未通过'}</h4>
+                        <p class="text-gray-500 text-sm">${result.message}</p>
+                    </div>
+                </div>
+                <div class="py-2 px-4 rounded-full ${isManual ? 'bg-secondary/20 text-secondary' : 'bg-primary/20 text-primary'}">
+                    ${isManual ? '手动检测' : '自动检测'}
+                </div>
+            `;
+            
+            // 更新详细数据
+            resultHeight.textContent = result.height || '--';
+            resultBase.textContent = result.base || '--';
+            resultRatio.textContent = result.ratio || '--';
+            
+            // 更新判定结果
+            judgmentResult.classList.remove('hidden');
+            judgmentResult.className = `p-4 rounded-lg mb-6 ${result.success ? 'bg-success/5 border border-success/20' : 'bg-danger/5 border border-danger/20'}`;
+            judgmentResult.querySelector('i').className = `fa ${result.success ? 'fa-check-circle text-success' : 'fa-times-circle text-danger'} text-xl mr-2`;
+            judgmentResult.querySelector('h4').className = `text-lg font-medium ${result.success ? 'text-success' : 'text-danger'}`;
+            judgmentResult.querySelector('h4').textContent = result.success ? '符合要求' : '不符合要求';
+            judgmentMessage.textContent = result.message;
+            
+            // 更新图表
+            updateChart(result.ratio);
+            chartContainer.classList.remove('hidden');
+        }
+
+        // 重置检测结果
+        function resetDetectionResults() {
+            autoDetectResult = null;
+            
+            // 重置概览
+            resultOverview.innerHTML = `
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mr-4">
+                        <i class="fa fa-question-circle text-2xl text-gray-400"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-medium text-gray-800">等待检测</h4>
+                        <p class="text-gray-500 text-sm">请上传图像并点击开始检测按钮</p>
+                    </div>
+                </div>
+                <div class="py-2 px-4 rounded-full bg-gray-100 text-gray-600 hidden" id="detectionType">
+                    自动检测
+                </div>
+            `;
+            
+            // 重置详细数据
+            resultHeight.textContent = '--';
+            resultBase.textContent = '--';
+            resultRatio.textContent = '--';
+            
+            // 隐藏判定结果
+            judgmentResult.classList.add('hidden');
+            
+            // 隐藏图表
+            chartContainer.classList.add('hidden');
+            
+            // 重置图表
+            resetChart();
+            
+            // 重置操作提示
+            actionTips.innerHTML = `
+                <p>提示：上传图像后点击「开始检测」按钮，系统将自动识别灰锥并计算参数。</p>
+            `;
+        }
+
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('ratioChart').getContext('2d');
+            
+            ratioChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['当前比例', '最小标准(2.5)', '最大标准(3.3)'],
+                    datasets: [{
+                        label: '比例值',
+                        data: [0, 2.5, 3.3],
+                        backgroundColor: [
+                            'rgba(22, 93, 255, 0.6)',
+                            'rgba(82, 196, 26, 0.6)',
+                            'rgba(82, 196, 26, 0.6)'
+                        ],
+                        borderColor: [
+                            'rgba(22, 93, 255, 1)',
+                            'rgba(82, 196, 26, 1)',
+                            'rgba(82, 196, 26, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '比例值'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // 更新图表
+        function updateChart(currentRatio) {
+            if (!ratioChart || currentRatio === null || currentRatio === undefined) return;
+            
+            // 更新数据
+            ratioChart.data.datasets[0].data[0] = currentRatio;
+            
+            // 更新颜色（根据比例是否在范围内）
+            const isInRange = currentRatio >= 2.5 && currentRatio <= 3.3;
+            ratioChart.data.datasets[0].backgroundColor[0] = isInRange ? 'rgba(82, 196, 26, 0.6)' : 'rgba(255, 77, 79, 0.6)';
+            ratioChart.data.datasets[0].borderColor[0] = isInRange ? 'rgba(82, 196, 26, 1)' : 'rgba(255, 77, 79, 1)';
+            
+            // 更新图表
+            ratioChart.update();
+        }
+
+        // 重置图表
+        function resetChart() {
+            if (!ratioChart) return;
+            
+            // 重置数据
+            ratioChart.data.datasets[0].data[0] = 0;
+            ratioChart.data.datasets[0].backgroundColor[0] = 'rgba(22, 93, 255, 0.6)';
+            ratioChart.data.datasets[0].borderColor[0] = 'rgba(22, 93, 255, 1)';
+            
+            // 更新图表
+            ratioChart.update();
+        }
+
+        // 显示加载模态框
+        function showLoading(message) {
+            loadingMessage.textContent = message || '正在处理，请稍候...';
+            loadingModal.classList.remove('hidden');
+            // 禁用背景滚动
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 隐藏加载模态框
+        function hideLoading() {
+            loadingModal.classList.add('hidden');
+            // 启用背景滚动
+            document.body.style.overflow = 'auto';
+        }
+
+        // 处理导航栏滚动效果
+        function handleScroll() {
+            if (window.scrollY > 10) {
+                navbar.classList.add('py-2', 'shadow-md');
+                navbar.classList.remove('py-3', 'shadow-sm');
+            } else {
+                navbar.classList.add('py-3', 'shadow-sm');
+                navbar.classList.remove('py-2', 'shadow-md');
+            }
+        }
+
+        // 切换移动端菜单
+        function toggleMobileMenu() {
+            mobileMenu.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
