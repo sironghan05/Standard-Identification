@@ -1,0 +1,89 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Mermaid Diagram</title>
+        <script src="https://cdn.jsdelivr.net/npm/mermaid@10.4.0/dist/mermaid.min.js"></script>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .mermaid { width: 100%; height: 100%; }
+        </style>
+    </head>
+    <body>
+        <div class="mermaid">
+            flowchart TD
+    %% 输入层
+    Input["输入层"]
+    Image["灰锥图像"]
+    ImageSequence["灰锥图像序列"]
+    Input --> Image
+    Input --> ImageSequence
+
+    %% 预处理层
+    Preprocessing["I. 图像预处理层"]
+    Grayscale["灰度化"]
+    Blur["高斯模糊"]
+    Binary["自适应阈值二值化"]
+    Image --> Preprocessing
+    Preprocessing --> Grayscale --> Blur --> Binary
+
+    %% 特征提取层
+    FeatureExtraction["II. 特征提取层"]
+    Contour["轮廓提取"]
+    LargestContour["最大轮廓筛选"]
+    Binary --> FeatureExtraction
+    FeatureExtraction --> Contour --> LargestContour
+
+    %% 检测层
+    Detection["III. 检测分析层"]
+    Triangle["三角形拟合"]
+    Properties["三角形属性计算"]
+    Validate["比例验证"]
+    LargestContour --> Detection
+    Detection --> Triangle --> Properties --> Validate
+
+    %% 手动修正层
+    ManualCorrection["IV. 手动修正层"]
+    UserInput["用户顶点选择"]
+    ManualTriangle["手动三角形构建"]
+    Image --> ManualCorrection
+    ManualCorrection --> UserInput --> ManualTriangle --> Properties
+
+    %% 输出层
+    Output["V. 输出层"]
+    Result["检测结果"]
+    Visualization["结果可视化"]
+    Validate --> Output
+    Output --> Result
+    Output --> Visualization
+
+    %% 可视化分支
+    Visualization --> Original["原始图像"]
+    Visualization --> BinaryVis["二值化图像"]
+    Visualization --> ResultVis["标记结果图像"]
+
+    %% 结果内容
+    Result --> Valid["是否符合要求"]
+    Result --> Ratio["比例值"]
+    Result --> Height["高度"]
+    Result --> Base["底边"]
+    Result --> Isosceles["是否等腰三角形"]
+
+    %% 样式设置
+    classDef layerStyle fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef processStyle fill:#bbf,stroke:#333,stroke-width:2px;
+    classDef inputStyle fill:#cfc,stroke:#333,stroke-width:2px;
+    classDef outputStyle fill:#fcf,stroke:#333,stroke-width:2px;
+
+    class Input,Image,ImageSequence inputStyle;
+    class Preprocessing,FeatureExtraction,Detection,ManualCorrection layerStyle;
+    class Grayscale,Blur,Binary,Contour,LargestContour,Triangle,Properties,Validate,UserInput,ManualTriangle processStyle;
+    class Output,Result,Visualization,Original,BinaryVis,ResultVis,Valid,Ratio,Height,Base,Isosceles outputStyle;
+
+        </div>
+        <script>
+            mermaid.initialize({ startOnLoad: true, theme: 'default', flowchart: { useMaxWidth: true } });
+        </script>
+    </body>
+    </html>
+    
